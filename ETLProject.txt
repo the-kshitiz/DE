@@ -42,7 +42,8 @@ street_name VARCHAR(255),
 street_number INT,
 zipcode INT,
 lat DECIMAL(10,3),
-lon DECIMAL(10,3)
+lon DECIMAL(10,3),
+PRIMARY KEY (location_id)
 );
 
 create table ETL_PROJECT.DIM_DATE
@@ -53,7 +54,8 @@ year INT,
 month VARCHAR(20),
 day INT,
 hour INT,
-weekday VARCHAR(20)
+weekday VARCHAR(20),
+PRIMARY KEY (date_id)
 );
 
 create table ETL_PROJECT.DIM_ATM
@@ -61,22 +63,24 @@ create table ETL_PROJECT.DIM_ATM
 atm_id INT,
 atm_number VARCHAR(20),
 atm_manufacturer VARCHAR(50),
-atm_location_id INT
+atm_location_id INT REFERENCES ETL_PROJECT.DIM_LOCATION(location_id),
+PRIMARY KEY (atm_id)
 );
 
 create table ETL_PROJECT.DIM_CARD_TYPE
 (
 card_type_id INT,
-card_type VARCHAR(30)
+card_type VARCHAR(30),
+PRIMARY KEY (card_type_id)
 );
 
 create table ETL_PROJECT.FACT_TRANS_ATM
 (
 trans_id BIGINT,
-atm_id INT,
-weather_loc_id INT,
-date_id INT,
-card_type_id INT,
+atm_id INTREFERENCES ETL_PROJECT.DIM_ATM(atm_id),
+weather_loc_id INT REFERENCES ETL_PROJECT.DIM_LOCATION(location_id),
+date_id INT REFERENCES ETL_PROJECT.DIM_DATE(daten_id),
+card_type_id INT REFERENCES ETL_PROJECT.DIM_CARD_TYPE_ID(card_type_id),
 atm_status VARCHAR(20),
 currency VARCHAR(10),
 service VARCHAR(20),
@@ -151,7 +155,7 @@ ORDER BY TOTAL_TRANSACTION_COUNT DESC
 LIMIT 10;
 
 Query 2
-SELECT FTA.WEATHER_MAIN, Count(FTA.TRANS_ID) as TOTAL_TRANSACTION_COUNT, COUNT(FTA.ATM_STATUS) AS INACTIVE_COUNT
+SELECT FTA.WEATHER_MAIN, Count(FTA.TRANS_ID) as TOTAL_TRANSACTION_COUNT, SUM(CASE WHEN ATM_STATUS = 'Inactive' then 1 ELSE 0 END) AS INACTIVE_COUNT, (INACTIVE_COUNT*100/TOTAL_TRANSACTION_COUNT) AS INACTIVE_COUNT_PERCENT
 FROM 
 ETL_PROJECT.FACT_TRANS_ATM FTA 
 LEFT JOIN 
